@@ -31,6 +31,7 @@
 #include <linux/slub_def.h>
 
 #define CAM_REQ_MGR_EVENT_MAX 30
+#define CAM_REQ_MGR_MAX_OPEN_CNT 2
 
 static struct cam_req_mgr_device g_dev;
 struct kmem_cache *g_cam_req_mgr_timer_cachep;
@@ -125,7 +126,7 @@ static int cam_req_mgr_open(struct file *filep)
 	cam_req_mgr_rwsem_write_op(CAM_SUBDEV_LOCK);
 
 	mutex_lock(&g_dev.cam_lock);
-	if (g_dev.open_cnt >= 1) {
+	if (g_dev.open_cnt >= CAM_REQ_MGR_MAX_OPEN_CNT) {
 		rc = -EALREADY;
 		goto end;
 	}
@@ -141,11 +142,13 @@ static int cam_req_mgr_open(struct file *filep)
 	spin_unlock_bh(&g_dev.cam_eventq_lock);
 
 	g_dev.open_cnt++;
-	rc = cam_mem_mgr_init();
-	if (rc) {
-		g_dev.open_cnt--;
-		CAM_ERR(CAM_CRM, "mem mgr init failed");
-		goto mem_mgr_init_fail;
+	if (g_dev.open_cnt == 1) {
+		rc = cam_mem_mgr_init();
+		if (rc) {
+			g_dev.open_cnt--;
+			CAM_ERR(CAM_CRM, "mem mgr init failed");
+			goto mem_mgr_init_fail;
+		}
 	}
 
 	mutex_unlock(&g_dev.cam_lock);
@@ -192,6 +195,13 @@ static int cam_req_mgr_close(struct file *filep)
 		return -EINVAL;
 	}
 
+	g_dev.open_cnt--;
+	if (g_dev.open_cnt > 0) {
+		v4l2_fh_release(filep);
+		mutex_unlock(&g_dev.cam_lock);
+		return 0;
+	}
+
 	cam_req_mgr_handle_core_shutdown();
 
 	list_for_each_entry(sd, &g_dev.v4l2_dev->subdevs, list) {
@@ -204,7 +214,6 @@ static int cam_req_mgr_close(struct file *filep)
 		}
 	}
 
-	g_dev.open_cnt--;
 	v4l2_fh_release(filep);
 
 	spin_lock_bh(&g_dev.cam_eventq_lock);
