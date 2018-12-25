@@ -475,6 +475,9 @@ static long dma_buf_ioctl(struct file *file,
 	case DMA_BUF_GET_NAME:
 		return dma_buf_get_name(dmabuf, (char __user *)arg);
 
+	case DMA_BUF_IOCTL_IMPORT_BUF_ADD_BY_MOTO:
+		dmabuf->ops->import_buf_add_by_moto(dmabuf);
+		return 0;
 	default:
 		return -ENOTTY;
 	}
