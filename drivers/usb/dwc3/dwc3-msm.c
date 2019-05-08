@@ -373,7 +373,6 @@ struct dwc3_msm {
 	
 	bool			ext_dp_switch;
 	struct regulator	*dp_mux_sel_power;
-	struct regulator	*typec_mux_sel_power;
 
 #ifdef CONFIG_MODS_NEW_SW_ARCH
 	bool			ext_typec_switch;
@@ -4734,15 +4733,6 @@ static int dwc3_msm_probe(struct platform_device *pdev)
 		if (ret)
 			dev_err(dev, "Failed to set reg ldo_dp_mux_sel_power cur: %d\n", ret );
 	}
-	mdwc->typec_mux_sel_power = devm_regulator_get(&pdev->dev, "typec-mux-sel");
-	if (IS_ERR(mdwc->typec_mux_sel_power)) {
-		dev_err(mdwc->dev, "typec-mux-sel is not connected\n");
-		mdwc->typec_mux_sel_power = NULL;
-	} else {
-		ret = regulator_set_load(mdwc->typec_mux_sel_power, 100000);
-		if (ret)
-			dev_err(dev, "Failed to set reg ldo_typec_mux_sel_power cur: %d\n", ret );
-	}
 
 	ret = of_property_read_u32(node, "qcom,lpm-to-suspend-delay-ms",
 				&mdwc->lpm_to_suspend_delay);
@@ -5427,11 +5417,6 @@ static int dwc3_otg_start_host(struct dwc3_msm *mdwc, int on)
 			if (ret)
 				dev_err(mdwc->dev, "unable to enable dp_mux_sel_power\n");
 		}
-		if (mdwc->typec_mux_sel_power) {
-			ret = regulator_enable(mdwc->typec_mux_sel_power);
-			if (ret)
-				dev_err(mdwc->dev, "unable to enable typec_mux_sel_power\n");
-		}
 
 		pm_runtime_get_sync(mdwc->dev);
 		dbg_event(0xFF, "StrtHost gync",
@@ -5872,11 +5857,6 @@ static void dwc3_otg_sm_work(struct work_struct *w)
 				if (ret)
 					dev_err(mdwc->dev, "unable to enable dp_mux_sel_power\n");
 			}
-			if (mdwc->typec_mux_sel_power) {
-				ret = regulator_enable(mdwc->typec_mux_sel_power);
-				if (ret)
-					dev_err(mdwc->dev, "unable to enable typec_mux_sel_power\n");
-			}
 		} else {
 			if (mdwc->usb_data_enabled)
 				dwc3_msm_gadget_vbus_draw(mdwc, 0);
@@ -5886,12 +5866,6 @@ static void dwc3_otg_sm_work(struct work_struct *w)
 				ret = regulator_disable(mdwc->dp_mux_sel_power);
 				if (ret)
 					dev_err(mdwc->dev, "unable to disable dp_mux_sel_power\n");
-			}
-
-			if (mdwc->typec_mux_sel_power) {
-				ret = regulator_disable(mdwc->typec_mux_sel_power);
-				if (ret)
-					dev_err(mdwc->dev, "unable to disable typec_mux_sel_power\n");
 			}
 		}
 		break;
