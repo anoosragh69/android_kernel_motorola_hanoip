@@ -7136,7 +7136,7 @@ int dsi_display_validate_mode_change(struct dsi_display *display,
 
 				if (cur_mode->timing.refresh_rate !=
 						adj_mode->timing.refresh_rate) {
-					pr_err("fps change along with dyn clk not supported\n");
+					pr_debug_once("fps change along with dyn clk not supported\n");
 					rc = -ENOTSUPP;
 					goto error;
 				}

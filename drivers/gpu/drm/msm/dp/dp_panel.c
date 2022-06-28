@@ -1727,11 +1727,11 @@ static int dp_panel_validate_edid(struct edid *edid, size_t edid_size)
 		return false;
 
 	if (EDID_LENGTH * (edid->extensions + 1) > edid_size) {
-		pr_err("edid size does not match allocated.\n");
+		pr_debug_once("edid size does not match allocated.\n");
 		return false;
 	}
 	if (!drm_edid_is_valid(edid)) {
-		pr_err("invalid edid.\n");
+		pr_debug_once("invalid edid.\n");
 		return false;
 	}
 	return true;
