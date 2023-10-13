@@ -190,6 +190,7 @@ obj-$(CONFIG_SENSORS_SSC)	+= sensors/
 obj-$(CONFIG_ESOC)              += esoc/
 obj-$(CONFIG_MMI_ANNOTATE)	+= mmi_annotate/
 obj-$(CONFIG_MMI_INFO)		+= mmi_info/
+obj-$(CONFIG_MOTO_F_USBNET)	+= moto_f_usbnet/
 # GNSS driver
 obj-$(CONFIG_GNSS_SIRF)		+= gnsssirf/
 obj-$(CONFIG_GNSS)		+= gnss/
